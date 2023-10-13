@@ -1,0 +1,172 @@
+#include<iostream>
+#include<algorithm>
+#include<deque>
+#include<math.h>
+#include <vector>
+
+using namespace std;
+
+struct s {
+	int x; int y;
+	int time;
+	int count;
+};
+
+struct p {
+	int x; int y;
+	int walk;
+	int wait;
+	int step;
+};
+
+bool compare(p& p1, p& p2) {
+	return p1.walk > p2.walk;
+}
+
+int N;
+vector<p> people;
+
+vector<p> p1;
+vector<p> p2;
+deque<p> w1;
+deque<p> w2;
+deque<p> s1;
+deque<p> s2;
+
+vector<s> stair;
+
+int res = 1 << 30;
+
+void move() {
+	// p에 목적지 계단에 가는 시간 저장하고 시간 순 정렬
+	vector<p> t1(p1.size());
+	copy(p1.begin(), p1.end(), t1.begin());
+	vector<p> t2(p2.size());
+	copy(p2.begin(), p2.end(), t2.begin());
+
+	for (int i = 0; i < t1.size(); i++) {
+		t1[i].walk = abs(t1[i].x - stair[0].x) + abs(t1[i].y - stair[0].y);
+	}
+
+	for (int i = 0; i < t2.size(); i++) {
+		t2[i].walk = abs(t2[i].x - stair[1].x) + abs(t2[i].y - stair[1].y);
+	}
+
+	sort(t1.begin(), t1.end(), compare);
+	sort(t2.begin(), t2.end(), compare);
+
+	// 시간에 따라 step과 wait에 push
+	for (int i = 0; i < t1.size(); i++) {
+		t1[i].step = stair[0].time;
+		if (i < 3) {
+			stair[0].count++;
+			s1.push_back(t1[i]);
+		}
+		else w1.push_back(t1[i]);
+	}
+
+	for (int i = 0; i < t2.size(); i++) {
+		t2[i].step = stair[1].time;
+
+		if (i < 3) {
+			stair[1].count++;
+			s2.push_back(t2[i]);
+		}
+		else w2.push_back(t2[i]);
+	}
+
+	// 1분씩 증가시키며 wait -> step(s의 step과 count 비교 후 pop + w를 s에 push)	int c = 0;
+	int ans1 = 0;
+	int ans2 = 0;
+	while (!s1.empty() || !s2.empty() || !w1.empty() || !w2.empty()) {
+		c++;
+		while (!s1.empty() && s1.front().step <= c) {
+			ans1 = max(ans1, s1.front().walk + s1.front().wait + s1.front().step);
+			s1.pop_front();
+
+			if (!w1.empty()) {
+				w1.front().wait = c;
+				s1.push_back(w1.front());
+				w1.pop_front();
+			}
+		}
+		
+		while (!s2.empty() && s2.front().step <= c) {
+			ans2 = max(ans2, s2.front().walk + s2.front().wait + s2.front().step);
+			s2.pop_front();
+
+			if (!w2.empty()) {
+				w2.front().wait = c;
+				s2.push_back(w2.front());
+				w2.pop_front();
+			}
+		}
+	}
+	int ans = ans1 > ans2 ? ans1 : ans2;
+	if (res > ans) res = ans;
+}
+
+void bf(int idx, int sidx) {
+	if (idx >= people.size()) {
+		move();
+	}
+
+	for (int i = idx; i < people.size(); i++) {
+		if (sidx == 0) {
+			// p1, p2 벡터로 변경
+			p1.push_back(people[i]);
+			bf(i+1, 0);
+			bf(i + 1, 1);
+			p1.pop_back();
+			break;
+		}
+		if (sidx == 1) {
+			p2.push_back(people[i]);
+			bf(i + 1, 0);
+			bf(i + 1, 1);
+			p2.pop_back();
+			break;
+		}
+	}
+}
+
+int main(int argc, char** argv)
+{
+	int test_case;
+	int T;
+
+	cin >> T;
+	
+	for (test_case = 1; test_case <= T; ++test_case)
+	{
+
+		cin >> N;
+
+		for (int i = 0; i < N; i++) {
+			for (int j = 0; j < N; j++) {
+				int t;
+				cin >> t;
+				if (t == 1) people.push_back({i, j, 0, 0, 0});
+				else if (t >= 2) {
+					stair.push_back({ i, j, t, 0 });
+				}
+			}
+		}
+
+		bf(0, 0);
+		bf(0, 1);
+		
+		cout << "#" << test_case << " " << res + 1 << '\n';
+		res = 1 << 30;
+		people.clear();
+		stair.clear();
+
+	}
+	return 0;//정상종료시 반드시 0을 리턴해야합니다.
+}
+
+// 처음 구상한 알고리즘 구현 방법과 달라진 부분이 너무 많아 구현과 디버깅에 시간 오래 걸림.
+//
+// 구현 어려운 문제는 처음 간단히 구상하고 단계별로 구현하면서 구체적으로 구현해볼 것.
+// 특히 사용할 자료구조를 잘못 생각해서 수정할 부분 많아졌고, 변수명 등을 대충 고치다보니 코드가 복잡해져서 디버깅 어려웠음.
+// 구현할 내용 많아 처음에 주석으로 설계해놓는 것은 좋은 생각이었음.
