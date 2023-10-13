@@ -1,0 +1,105 @@
+#include<iostream>
+#include<algorithm>
+#include<math.h>
+
+#define WALL 1<<30
+
+using namespace std;
+
+int N, K;
+int res = 1;
+int MAX = 0;
+
+int map[10][10];
+int dirX[4] = { -1, 1, 0, 0 };
+int dirY[4] = { 0, 0, -1, 1 };
+
+void findMax() {
+	int m = 0;
+	for (int i = 1; i <= N; i++)
+	{
+		for (int j = 1; j <= N; j++) {
+			m = max(m, map[i][j]);
+		}
+	}
+	MAX = m;
+}
+
+void dfs(int x, int y, int count) {
+	if (count > res) {
+		res = count;
+	}
+
+	int cur = map[x][y];
+
+	for (int i = 0; i < 4; i++) {
+		int nx = x + dirX[i];
+		int ny = y + dirY[i];
+
+		if (map[nx][ny] != WALL && map[nx][ny] < cur) {
+			dfs(nx, ny, count+1);
+		}
+	}
+}
+
+void calc() {
+	for (int i = 1; i <= N; i++)
+	{
+		for (int j = 1; j <= N; j++) {
+			if (map[i][j] == MAX) dfs(i, j, 1);
+		}
+	}
+}
+
+void bf() {
+
+	for (int i = 1; i <= N; i++) {
+		for (int j = 1; j <= N; j++) {
+			for (int k = 0; k <= K; k++) {
+				map[i][j] -= k;
+				calc();
+				map[i][j] += k;
+			}
+		}
+	}
+}
+
+int main(int argc, char** argv)
+{
+	int test_case;
+	int T;
+	
+	//freopen("input.txt", "r", stdin);
+	cin >> T;
+	/*
+	   여러 개의 테스트 케이스가 주어지므로, 각각을 처리합니다.
+	*/
+	for (test_case = 1; test_case <= T; ++test_case)
+	{
+		cin >> N >> K;
+
+		for (int i = 0; i <= N + 1; i++) {
+			for (int j = 0; j <= N + 1; j++) {
+				if (i == 0 || i == N + 1 || j == 0 || j == N + 1) {
+					map[i][j] = WALL;
+				}
+				else {
+					cin >> map[i][j];
+				}
+				
+			}
+		}
+
+		findMax();
+		bf();
+
+		cout << "#" << test_case << " " << res << '\n';
+		res = 1;
+
+	}
+	return 0;//정상종료시 반드시 0을 리턴해야합니다.
+}
+
+// 모든 위치 0~k까지 깎으며 MAX값 위치에서 DFS 사용하여 최대 경로 길이 탐색하여 구현.
+//
+// MAX가 고정인지 문제에 써있지 않아, DFS 돌리기 전 k를 map에서 깎고 깎인 MAX값 고려하여 MAX값 수정하도록 구현하니 실패. MAX 고정시키니 통과.
